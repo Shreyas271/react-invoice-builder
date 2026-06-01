@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import html2pdf from 'html2pdf.js';
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 function App() {
   const printRef = useRef();
@@ -13,13 +14,9 @@ function App() {
   const [clientName, setClientName] = useState('');
   const [clientAddress, setClientAddress] = useState('');
 
-  // Company State (Now uses LocalStorage to remember your details!)
-  const [companyName, setCompanyName] = useState(() => {
-    return localStorage.getItem('invoice-company-name') || '';
-  });
-  const [companyAddress, setCompanyAddress] = useState(() => {
-    return localStorage.getItem('invoice-company-address') || '';
-  });
+  // Company State
+  const [companyName, setCompanyName] = useState(() => localStorage.getItem('invoice-company-name') || '');
+  const [companyAddress, setCompanyAddress] = useState(() => localStorage.getItem('invoice-company-address') || '');
 
   // Items State
   const [items, setItems] = useState([
@@ -27,7 +24,7 @@ function App() {
   ]);
   const [taxRate, setTaxRate] = useState(5);
 
-  // Automatically save Company Details to the browser when you type
+  // Save Company Details
   useEffect(() => {
     localStorage.setItem('invoice-company-name', companyName);
     localStorage.setItem('invoice-company-address', companyAddress);
@@ -46,27 +43,36 @@ function App() {
     setItems(items.map(item => (item.id === id ? { ...item, [field]: value } : item)));
   };
 
-  // PDF Export
-  const downloadPDF = () => {
+  // NEW STABLE PDF EXPORT
+  const downloadPDF = async () => {
     setIsGenerating(true);
     const element = printRef.current;
-    
-    const opt = {
-      margin: 0.5,
-      filename: `Invoice_${invoiceNumber}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-    
-    // .from() and .set() order matters here to prevent silent crashes
-    html2pdf().from(element).set(opt).save().then(() => {
+
+    try {
+      // 1. Take a high-quality picture of the right side of the screen
+      const canvas = await html2canvas(element, { 
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+
+      // 2. Create the PDF document (A4 size)
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      // 3. Add the picture to the PDF and download it
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Invoice_${invoiceNumber}.pdf`);
+      
+    } catch (error) {
+      console.error("PDF Generation Error:", error);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
       setIsGenerating(false);
-    }).catch(err => {
-      console.error("PDF Error:", err);
-      alert("Something blocked the PDF from generating. Try turning off Dark Mode extensions.");
-      setIsGenerating(false);
-    });
+    }
   };
 
   return (
@@ -88,24 +94,24 @@ function App() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-semibold text-gray-600 mb-1">Invoice Number</label>
-            <input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="w-full border border-gray-300 p-2 rounded-md focus:ring-blue-500 bg-white" />
+            <input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="w-full border border-gray-300 p-2 rounded-md focus:ring-blue-500 bg-white outline-none" />
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-600 mb-1">Date</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full border border-gray-300 p-2 rounded-md focus:ring-blue-500 bg-white" />
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full border border-gray-300 p-2 rounded-md focus:ring-blue-500 bg-white outline-none" />
           </div>
         </div>
 
         <div className="space-y-4 border-t pt-4">
           <h3 className="font-semibold text-gray-700">Your Company Details</h3>
-          <input type="text" placeholder="Your Company Name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full border border-gray-300 p-2 rounded-md bg-white" />
-          <textarea placeholder="Your Company Address" value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} className="w-full border border-gray-300 p-2 rounded-md bg-white" rows="2" />
+          <input type="text" placeholder="Your Company Name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full border border-gray-300 p-2 rounded-md bg-white outline-none" />
+          <textarea placeholder="Your Company Address" value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} className="w-full border border-gray-300 p-2 rounded-md bg-white outline-none" rows="2" />
         </div>
 
         <div className="space-y-4 border-t pt-4">
           <h3 className="font-semibold text-gray-700">Client Details</h3>
-          <input type="text" placeholder="Client Name" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full border border-gray-300 p-2 rounded-md bg-white" />
-          <textarea placeholder="Client Address" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} className="w-full border border-gray-300 p-2 rounded-md bg-white" rows="2" />
+          <input type="text" placeholder="Client Name" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full border border-gray-300 p-2 rounded-md bg-white outline-none" />
+          <textarea placeholder="Client Address" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} className="w-full border border-gray-300 p-2 rounded-md bg-white outline-none" rows="2" />
         </div>
 
         <div className="space-y-4 border-t pt-4">
@@ -116,9 +122,9 @@ function App() {
           
           {items.map((item) => (
             <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-gray-50 p-3 rounded-lg border border-gray-300">
-              <input type="text" placeholder="Item Name" value={item.description} onChange={(e) => updateItem(item.id, 'description', e.target.value)} className="col-span-5 border border-gray-300 p-2 rounded-md text-sm bg-white" />
-              <input type="number" min="1" placeholder="Qty" value={item.quantity} onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))} className="col-span-2 border border-gray-300 p-2 rounded-md text-sm bg-white" />
-              <input type="number" min="0" placeholder="Rate" value={item.rate} onChange={(e) => updateItem(item.id, 'rate', Number(e.target.value))} className="col-span-3 border border-gray-300 p-2 rounded-md text-sm bg-white" />
+              <input type="text" placeholder="Item Name" value={item.description} onChange={(e) => updateItem(item.id, 'description', e.target.value)} className="col-span-5 border border-gray-300 p-2 rounded-md text-sm bg-white outline-none" />
+              <input type="number" min="1" placeholder="Qty" value={item.quantity} onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))} className="col-span-2 border border-gray-300 p-2 rounded-md text-sm bg-white outline-none" />
+              <input type="number" min="0" placeholder="Rate" value={item.rate} onChange={(e) => updateItem(item.id, 'rate', Number(e.target.value))} className="col-span-3 border border-gray-300 p-2 rounded-md text-sm bg-white outline-none" />
               <button onClick={() => removeItem(item.id)} className="col-span-2 text-red-500 hover:text-red-700 text-sm font-semibold cursor-pointer">Del</button>
             </div>
           ))}
@@ -126,7 +132,7 @@ function App() {
 
         <div className="border-t pt-4">
           <label className="block text-sm font-semibold text-gray-600 mb-1">Tax Rate (%)</label>
-          <input type="number" value={taxRate} onChange={(e) => setTaxRate(Number(e.target.value))} className="w-32 border border-gray-300 p-2 rounded-md bg-white" />
+          <input type="number" value={taxRate} onChange={(e) => setTaxRate(Number(e.target.value))} className="w-32 border border-gray-300 p-2 rounded-md bg-white outline-none" />
         </div>
       </div>
 
