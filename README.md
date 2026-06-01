@@ -1,16 +1,31 @@
-# React + Vite
+# 📄 React Invoice Builder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A fully responsive and dynamic invoice generation application built with React and Tailwind CSS. This tool allows users to easily create professional invoices, automatically calculate taxes and totals, and export the final document as a high-quality PDF.
 
-Currently, two official plugins are available:
+## 🚀 Live Demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**[Click here to view the live application](https://invoicebuilder0.netlify.app/)**
 
-## React Compiler
+## ✨ Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Dynamic Calculations:** Automatically calculates subtotal, tax amounts, and grand totals in real-time as you type.
+- **Persistent Data:** Utilizes browser `localStorage` to remember your Company Name and Address so you don't have to re-type it every time.
+- **Full CRUD Functionality:** Easily add, edit, or remove line items from your invoice.
+- **Production-Ready PDF Export:** Uses `jsPDF` and `html2canvas` for stable, high-resolution PDF generation directly from the browser.
+- **Responsive Design:** Built with Tailwind CSS V4 to ensure the control panel is easy to use on any screen size.
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Frontend Framework:** React JS (via Vite)
+- **Styling:** Tailwind CSS (v4)
+- **State Management:** React Hooks (`useState`, `useEffect`, `useRef`)
+- **PDF Generation:** `jsPDF` & `html2canvas`
+
+## 💻 Local Installation & Setup
+
+If you want to run this project locally on your machine, follow these steps:
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/Shreyas271/react-invoice-builder.git](https://github.com/Shreyas271/react-invoice-builder.git)
+   ```
