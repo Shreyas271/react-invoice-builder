@@ -1,11 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
+import React, { useState, useEffect } from 'react';
 
 function App() {
-  const printRef = useRef();
-  const [isGenerating, setIsGenerating] = useState(false);
-
   // Invoice State
   const [invoiceNumber, setInvoiceNumber] = useState(Math.floor(Math.random() * 100000));
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -14,7 +9,7 @@ function App() {
   const [clientName, setClientName] = useState('');
   const [clientAddress, setClientAddress] = useState('');
 
-  // Company State
+  // Company State 
   const [companyName, setCompanyName] = useState(() => localStorage.getItem('invoice-company-name') || '');
   const [companyAddress, setCompanyAddress] = useState(() => localStorage.getItem('invoice-company-address') || '');
 
@@ -43,51 +38,24 @@ function App() {
     setItems(items.map(item => (item.id === id ? { ...item, [field]: value } : item)));
   };
 
-  // NEW STABLE PDF EXPORT
-  const downloadPDF = async () => {
-    setIsGenerating(true);
-    const element = printRef.current;
-
-    try {
-      // 1. Take a high-quality picture of the right side of the screen
-      const canvas = await html2canvas(element, { 
-        scale: 2, 
-        useCORS: true,
-        backgroundColor: '#ffffff'
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-
-      // 2. Create the PDF document (A4 size)
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      // 3. Add the picture to the PDF and download it
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Invoice_${invoiceNumber}.pdf`);
-      
-    } catch (error) {
-      console.error("PDF Generation Error:", error);
-      alert("Failed to generate PDF. Please try again.");
-    } finally {
-      setIsGenerating(false);
-    }
+  // NATIVE BROWSER PRINT ENGINE (FOOLPROOF)
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1400px] mx-auto bg-gray-50 text-gray-800">
+    // Added print:block and print:p-0 to clean up the page when printing
+    <div className="min-h-screen p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1400px] mx-auto bg-gray-50 text-gray-800 print:block print:p-0 print:bg-white">
       
-      {/* LEFT SIDE: CONTROLS */}
-      <div className="lg:col-span-5 space-y-6 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      {/* LEFT SIDE: CONTROLS (Added print:hidden so the menu disappears on the PDF!) */}
+      <div className="lg:col-span-5 space-y-6 bg-white p-6 rounded-xl shadow-sm border border-gray-200 print:hidden">
         <div className="flex justify-between items-center border-b pb-4">
           <h2 className="text-2xl font-bold text-gray-800">Invoice Editor</h2>
           <button 
-            onClick={downloadPDF} 
-            disabled={isGenerating}
-            className={`px-4 py-2 rounded-lg transition font-medium cursor-pointer ${isGenerating ? 'bg-gray-400 text-gray-200' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+            onClick={handlePrint} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium cursor-pointer"
           >
-            {isGenerating ? 'Generating...' : 'Download PDF'}
+            Download PDF
           </button>
         </div>
 
@@ -137,8 +105,9 @@ function App() {
       </div>
 
       {/* RIGHT SIDE: PREVIEW */}
-      <div className="lg:col-span-7 flex justify-center items-start">
-        <div ref={printRef} className="bg-white p-8 sm:p-12 w-full max-w-3xl shadow-lg border border-gray-200 text-gray-800">
+      {/* Added print:block and print:w-full so the invoice expands to fit the PDF paper */}
+      <div className="lg:col-span-7 flex justify-center items-start print:block print:w-full print:m-0 print:p-0">
+        <div className="bg-white p-8 sm:p-12 w-full max-w-3xl shadow-lg border border-gray-200 text-gray-800 print:shadow-none print:border-none print:max-w-none print:p-0">
           
           <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-gray-800 pb-6 mb-8 gap-4">
             <div>
@@ -161,7 +130,7 @@ function App() {
           <div className="overflow-hidden mb-8">
             <table className="w-full border-collapse text-sm sm:text-base">
               <thead>
-                <tr className="bg-gray-100 text-left text-gray-600 uppercase text-xs sm:text-sm">
+                <tr className="bg-gray-100 text-left text-gray-600 uppercase text-xs sm:text-sm print:bg-gray-100">
                   <th className="p-3 font-semibold rounded-tl-lg">Description</th>
                   <th className="p-3 font-semibold text-center">Qty</th>
                   <th className="p-3 font-semibold text-right">Rate</th>
@@ -182,7 +151,7 @@ function App() {
           </div>
 
           <div className="flex justify-end text-sm sm:text-base">
-            <div className="w-full sm:w-72 bg-gray-50 p-4 rounded-lg">
+            <div className="w-full sm:w-72 bg-gray-50 p-4 rounded-lg print:bg-gray-50">
               <div className="flex justify-between mb-2 text-gray-600">
                 <span>Subtotal</span>
                 <span>₹{subtotal.toFixed(2)}</span>
